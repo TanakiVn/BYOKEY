@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use byokey_auth::AuthManager;
 use byokey_translate::{ClaudeToOpenAI, OpenAIToClaude, inject_cache_control};
 use byokey_types::{
-    ChatRequest, ProviderId,
+    ChatRequest, ProviderId, RateLimitStore,
     traits::{
         ByteStream, ProviderExecutor, ProviderResponse, RequestTranslator, ResponseTranslator,
         Result,
@@ -49,12 +49,17 @@ pub struct ClaudeExecutor {
 
 impl ClaudeExecutor {
     /// Creates a new Claude executor with an optional API key and auth manager.
-    pub fn new(http: Client, api_key: Option<String>, auth: Arc<AuthManager>) -> Self {
-        Self {
-            ph: ProviderHttp::new(http),
-            api_key,
-            auth,
+    pub fn new(
+        http: Client,
+        api_key: Option<String>,
+        auth: Arc<AuthManager>,
+        ratelimit: Option<Arc<RateLimitStore>>,
+    ) -> Self {
+        let mut ph = ProviderHttp::new(http);
+        if let Some(store) = ratelimit {
+            ph = ph.with_ratelimit(store, ProviderId::Claude);
         }
+        Self { ph, api_key, auth }
     }
 
     /// Resolves the authentication mode: API key if present, otherwise OAuth token.
@@ -307,7 +312,7 @@ mod tests {
     fn make_executor() -> ClaudeExecutor {
         let store = Arc::new(InMemoryTokenStore::new());
         let auth = Arc::new(AuthManager::new(store, rquest::Client::new()));
-        ClaudeExecutor::new(Client::new(), None, auth)
+        ClaudeExecutor::new(Client::new(), None, auth, None)
     }
 
     #[test]
@@ -322,7 +327,7 @@ mod tests {
     fn test_supported_models_with_api_key() {
         let store = Arc::new(InMemoryTokenStore::new());
         let auth = Arc::new(AuthManager::new(store, rquest::Client::new()));
-        let ex = ClaudeExecutor::new(Client::new(), Some("sk-ant-test".into()), auth);
+        let ex = ClaudeExecutor::new(Client::new(), Some("sk-ant-test".into()), auth, None);
         assert!(!ex.supported_models().is_empty());
     }
 }

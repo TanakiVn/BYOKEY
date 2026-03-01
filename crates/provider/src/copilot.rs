@@ -7,7 +7,7 @@ use crate::registry;
 use async_trait::async_trait;
 use byokey_auth::AuthManager;
 use byokey_types::{
-    AccountInfo, ByokError, ChatRequest, ProviderId,
+    AccountInfo, ByokError, ChatRequest, ProviderId, RateLimitStore,
     traits::{ProviderExecutor, ProviderResponse, Result},
 };
 use serde_json::Value;
@@ -98,9 +98,18 @@ pub struct CopilotExecutor {
 
 impl CopilotExecutor {
     /// Creates a new Copilot executor with an optional API key and auth manager.
-    pub fn new(http: rquest::Client, api_key: Option<String>, auth: Arc<AuthManager>) -> Self {
+    pub fn new(
+        http: rquest::Client,
+        api_key: Option<String>,
+        auth: Arc<AuthManager>,
+        ratelimit: Option<Arc<RateLimitStore>>,
+    ) -> Self {
+        let mut ph = ProviderHttp::new(http);
+        if let Some(store) = ratelimit {
+            ph = ph.with_ratelimit(store, ProviderId::Copilot);
+        }
         Self {
-            ph: ProviderHttp::new(http),
+            ph,
             api_key,
             auth,
             cache: Mutex::new(HashMap::new()),
@@ -526,7 +535,7 @@ mod tests {
     fn make_executor() -> CopilotExecutor {
         let store = Arc::new(InMemoryTokenStore::new());
         let auth = Arc::new(AuthManager::new(store, rquest::Client::new()));
-        CopilotExecutor::new(Client::new(), None, auth)
+        CopilotExecutor::new(Client::new(), None, auth, None)
     }
 
     #[test]

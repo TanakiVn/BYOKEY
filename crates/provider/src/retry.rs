@@ -8,7 +8,7 @@ use crate::routing::CredentialRouter;
 use async_trait::async_trait;
 use byokey_auth::AuthManager;
 use byokey_types::{
-    ChatRequest, ProviderId,
+    ChatRequest, ProviderId, RateLimitStore,
     traits::{ProviderExecutor, ProviderResponse, Result},
 };
 use rquest::Client;
@@ -25,6 +25,7 @@ pub struct RetryExecutor {
     auth: Arc<AuthManager>,
     http: Client,
     models: Vec<String>,
+    ratelimit: Option<Arc<RateLimitStore>>,
 }
 
 impl RetryExecutor {
@@ -41,6 +42,7 @@ impl RetryExecutor {
         auth: Arc<AuthManager>,
         http: Client,
         models: Vec<String>,
+        ratelimit: Option<Arc<RateLimitStore>>,
     ) -> Self {
         Self {
             provider,
@@ -48,6 +50,7 @@ impl RetryExecutor {
             auth,
             http,
             models,
+            ratelimit,
         }
     }
 }
@@ -69,6 +72,7 @@ impl ProviderExecutor for RetryExecutor {
                 Some(key.clone()),
                 Arc::clone(&self.auth),
                 self.http.clone(),
+                self.ratelimit.clone(),
             );
 
             let Some(executor) = executor else {
@@ -123,6 +127,7 @@ mod tests {
             make_auth(),
             Client::new(),
             vec!["claude-opus-4-5".into()],
+            None,
         );
         assert_eq!(exec.supported_models(), vec!["claude-opus-4-5"]);
     }
@@ -135,6 +140,7 @@ mod tests {
             make_auth(),
             Client::new(),
             vec!["claude-opus-4-5".into()],
+            None,
         );
         assert_eq!(exec.supported_models().len(), 1);
     }

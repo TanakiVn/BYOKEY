@@ -1,124 +1,294 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "byokey-proxy",
-    "description": "Bring Your Own Keys \u2014 AI subscription-to-API proxy gateway",
-    "contact": {
-      "name": "AprilNEA",
-      "email": "github@sku.moe"
+    "openapi": "3.1.0",
+    "info": {
+        "title": "byokey-proxy",
+        "description": "Bring Your Own Keys \u2014 AI subscription-to-API proxy gateway",
+        "contact": {
+            "name": "AprilNEA",
+            "email": "github@sku.moe"
+        },
+        "license": {
+            "name": "MIT OR Apache-2.0",
+            "identifier": "MIT OR Apache-2.0"
+        },
+        "version": "0.5.3"
     },
-    "license": {
-      "name": "MIT OR Apache-2.0",
-      "identifier": "MIT OR Apache-2.0"
-    },
-    "version": "0.5.3"
-  },
-  "paths": {
-    "/v0/management/status": {
-      "get": {
-        "tags": [
-          "management"
-        ],
-        "summary": "Returns the current server and provider status.",
-        "operationId": "status_handler",
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StatusResponse"
+    "paths": {
+        "/v0/management/accounts": {
+            "get": {
+                "tags": [
+                    "management"
+                ],
+                "summary": "Lists all accounts for every provider.",
+                "operationId": "accounts_handler",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccountsResponse"
+                                }
+                            }
+                        }
+                    }
                 }
-              }
             }
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "AuthStatus": {
-        "type": "string",
-        "description": "Authentication state for a provider.",
-        "enum": [
-          "valid",
-          "expired",
-          "not_configured"
-        ]
-      },
-      "ProviderStatus": {
-        "type": "object",
-        "description": "Per-provider status summary.",
-        "required": [
-          "id",
-          "display_name",
-          "enabled",
-          "auth_status",
-          "models_count"
-        ],
-        "properties": {
-          "auth_status": {
-            "$ref": "#/components/schemas/AuthStatus"
-          },
-          "display_name": {
-            "type": "string"
-          },
-          "enabled": {
-            "type": "boolean"
-          },
-          "id": {
-            "type": "string"
-          },
-          "models_count": {
-            "type": "integer",
-            "minimum": 0
-          }
-        }
-      },
-      "ServerInfo": {
-        "type": "object",
-        "description": "Server listen address.",
-        "required": [
-          "host",
-          "port"
-        ],
-        "properties": {
-          "host": {
-            "type": "string"
-          },
-          "port": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 0
-          }
-        }
-      },
-      "StatusResponse": {
-        "type": "object",
-        "description": "Top-level status response.",
-        "required": [
-          "server",
-          "providers"
-        ],
-        "properties": {
-          "providers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProviderStatus"
+        },
+        "/v0/management/accounts/{provider}/{account_id}": {
+            "delete": {
+                "tags": [
+                    "management"
+                ],
+                "summary": "Removes a stored account (and its token) for a provider.",
+                "operationId": "remove_account_handler",
+                "parameters": [
+                    {
+                        "name": "provider",
+                        "in": "path",
+                        "description": "Provider identifier",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "account_id",
+                        "in": "path",
+                        "description": "Account identifier",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
             }
-          },
-          "server": {
-            "$ref": "#/components/schemas/ServerInfo"
-          }
+        },
+        "/v0/management/accounts/{provider}/{account_id}/activate": {
+            "post": {
+                "tags": [
+                    "management"
+                ],
+                "summary": "Switches the active account for a provider.",
+                "operationId": "activate_account_handler",
+                "parameters": [
+                    {
+                        "name": "provider",
+                        "in": "path",
+                        "description": "Provider identifier",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "account_id",
+                        "in": "path",
+                        "description": "Account identifier",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/v0/management/status": {
+            "get": {
+                "tags": [
+                    "management"
+                ],
+                "summary": "Returns the current server and provider status.",
+                "operationId": "status_handler",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
-      }
-    }
-  },
-  "tags": [
-    {
-      "name": "management",
-      "description": "Daemon management API"
-    }
-  ]
+    },
+    "components": {
+        "schemas": {
+            "AccountDetail": {
+                "type": "object",
+                "description": "Details for a single stored account.",
+                "required": [
+                    "account_id",
+                    "is_active",
+                    "token_state"
+                ],
+                "properties": {
+                    "account_id": {
+                        "type": "string"
+                    },
+                    "expires_at": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "format": "int64",
+                        "minimum": 0
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "label": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "token_state": {
+                        "$ref": "#/components/schemas/TokenStateDto"
+                    }
+                }
+            },
+            "AccountsResponse": {
+                "type": "object",
+                "description": "All accounts grouped by provider.",
+                "required": [
+                    "providers"
+                ],
+                "properties": {
+                    "providers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProviderAccounts"
+                        }
+                    }
+                }
+            },
+            "AuthStatus": {
+                "type": "string",
+                "description": "Authentication state for a provider.",
+                "enum": [
+                    "valid",
+                    "expired",
+                    "not_configured"
+                ]
+            },
+            "ProviderAccounts": {
+                "type": "object",
+                "description": "Accounts for a single provider.",
+                "required": [
+                    "id",
+                    "display_name",
+                    "accounts"
+                ],
+                "properties": {
+                    "accounts": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AccountDetail"
+                        }
+                    },
+                    "display_name": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ProviderStatus": {
+                "type": "object",
+                "description": "Per-provider status summary.",
+                "required": [
+                    "id",
+                    "display_name",
+                    "enabled",
+                    "auth_status",
+                    "models_count"
+                ],
+                "properties": {
+                    "auth_status": {
+                        "$ref": "#/components/schemas/AuthStatus"
+                    },
+                    "display_name": {
+                        "type": "string"
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "models_count": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                }
+            },
+            "ServerInfo": {
+                "type": "object",
+                "description": "Server listen address.",
+                "required": [
+                    "host",
+                    "port"
+                ],
+                "properties": {
+                    "host": {
+                        "type": "string"
+                    },
+                    "port": {
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 0
+                    }
+                }
+            },
+            "StatusResponse": {
+                "type": "object",
+                "description": "Top-level status response.",
+                "required": [
+                    "server",
+                    "providers"
+                ],
+                "properties": {
+                    "providers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProviderStatus"
+                        }
+                    },
+                    "server": {
+                        "$ref": "#/components/schemas/ServerInfo"
+                    }
+                }
+            },
+            "TokenStateDto": {
+                "type": "string",
+                "description": "Token validity state.",
+                "enum": [
+                    "valid",
+                    "expired",
+                    "invalid"
+                ]
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "management",
+            "description": "Daemon management API"
+        }
+    ]
 }

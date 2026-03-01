@@ -7,7 +7,7 @@ use crate::registry;
 use async_trait::async_trait;
 use byokey_auth::AuthManager;
 use byokey_types::{
-    ChatRequest, ProviderId,
+    ChatRequest, ProviderId, RateLimitStore,
     traits::{ProviderExecutor, ProviderResponse, Result},
 };
 use rquest::Client;
@@ -25,12 +25,17 @@ pub struct QwenExecutor {
 
 impl QwenExecutor {
     /// Creates a new Qwen executor with an optional API key and auth manager.
-    pub fn new(http: Client, api_key: Option<String>, auth: Arc<AuthManager>) -> Self {
-        Self {
-            ph: ProviderHttp::new(http),
-            api_key,
-            auth,
+    pub fn new(
+        http: Client,
+        api_key: Option<String>,
+        auth: Arc<AuthManager>,
+        ratelimit: Option<Arc<RateLimitStore>>,
+    ) -> Self {
+        let mut ph = ProviderHttp::new(http);
+        if let Some(store) = ratelimit {
+            ph = ph.with_ratelimit(store, ProviderId::Qwen);
         }
+        Self { ph, api_key, auth }
     }
 
     /// Returns the Bearer token: API key if configured, otherwise OAuth access token.
@@ -95,7 +100,7 @@ mod tests {
     fn make_executor() -> QwenExecutor {
         let store = Arc::new(InMemoryTokenStore::new());
         let auth = Arc::new(AuthManager::new(store, rquest::Client::new()));
-        QwenExecutor::new(Client::new(), None, auth)
+        QwenExecutor::new(Client::new(), None, auth, None)
     }
 
     #[test]

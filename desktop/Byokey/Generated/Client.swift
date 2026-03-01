@@ -38,6 +38,144 @@ internal struct Client: APIProtocol {
     private var converter: Converter {
         client.converter
     }
+    /// Lists all accounts for every provider.
+    ///
+    /// - Remark: HTTP `GET /v0/management/accounts`.
+    /// - Remark: Generated from `#/paths//v0/management/accounts/get(accounts_handler)`.
+    internal func accounts_handler(_ input: Operations.accounts_handler.Input) async throws -> Operations.accounts_handler.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.accounts_handler.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v0/management/accounts",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.accounts_handler.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.AccountsResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Removes a stored account (and its token) for a provider.
+    ///
+    /// - Remark: HTTP `DELETE /v0/management/accounts/{provider}/{account_id}`.
+    /// - Remark: Generated from `#/paths//v0/management/accounts/{provider}/{account_id}/delete(remove_account_handler)`.
+    internal func remove_account_handler(_ input: Operations.remove_account_handler.Input) async throws -> Operations.remove_account_handler.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.remove_account_handler.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v0/management/accounts/{}/{}",
+                    parameters: [
+                        input.path.provider,
+                        input.path.account_id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .delete
+                )
+                suppressMutabilityWarning(&request)
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Switches the active account for a provider.
+    ///
+    /// - Remark: HTTP `POST /v0/management/accounts/{provider}/{account_id}/activate`.
+    /// - Remark: Generated from `#/paths//v0/management/accounts/{provider}/{account_id}/activate/post(activate_account_handler)`.
+    internal func activate_account_handler(_ input: Operations.activate_account_handler.Input) async throws -> Operations.activate_account_handler.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.activate_account_handler.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v0/management/accounts/{}/{}/activate",
+                    parameters: [
+                        input.path.provider,
+                        input.path.account_id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// Returns the current server and provider status.
     ///
     /// - Remark: HTTP `GET /v0/management/status`.

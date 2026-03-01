@@ -234,6 +234,7 @@ async fn copilot_messages(
         state.http.clone(),
         copilot_config.api_key,
         state.auth.clone(),
+        Some(state.ratelimits.clone()),
     );
 
     let accounts = state

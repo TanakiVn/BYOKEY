@@ -15,7 +15,7 @@ use async_trait::async_trait;
 use byokey_auth::AuthManager;
 use byokey_translate::{CodexToOpenAI, OpenAIToCodex};
 use byokey_types::{
-    ByokError, ChatRequest, ProviderId,
+    ByokError, ChatRequest, ProviderId, RateLimitStore,
     traits::{
         ByteStream, ProviderExecutor, ProviderResponse, RequestTranslator, ResponseTranslator,
         Result,
@@ -48,12 +48,17 @@ pub struct CodexExecutor {
 
 impl CodexExecutor {
     /// Creates a new Codex executor with an optional API key and auth manager.
-    pub fn new(http: Client, api_key: Option<String>, auth: Arc<AuthManager>) -> Self {
-        Self {
-            ph: ProviderHttp::new(http),
-            api_key,
-            auth,
+    pub fn new(
+        http: Client,
+        api_key: Option<String>,
+        auth: Arc<AuthManager>,
+        ratelimit: Option<Arc<RateLimitStore>>,
+    ) -> Self {
+        let mut ph = ProviderHttp::new(http);
+        if let Some(store) = ratelimit {
+            ph = ph.with_ratelimit(store, ProviderId::Codex);
         }
+        Self { ph, api_key, auth }
     }
 
     /// Returns `(token, is_oauth)`.  `is_oauth = true` when the token came
@@ -329,7 +334,7 @@ mod tests {
     fn make_executor() -> CodexExecutor {
         let store = Arc::new(InMemoryTokenStore::new());
         let auth = Arc::new(AuthManager::new(store, rquest::Client::new()));
-        CodexExecutor::new(Client::new(), None, auth)
+        CodexExecutor::new(Client::new(), None, auth, None)
     }
 
     #[test]

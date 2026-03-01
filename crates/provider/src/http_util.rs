@@ -4,25 +4,48 @@
 //! across all executor implementations.
 
 use byokey_types::{
-    ByokError,
+    ByokError, ProviderId, RateLimitSnapshot, RateLimitStore,
     traits::{ByteStream, ProviderResponse, Result},
 };
 use futures_util::StreamExt as _;
 use rquest::{Client, RequestBuilder};
 use serde_json::Value;
+use std::collections::HashMap;
+use std::sync::Arc;
+
+/// Optional rate-limit capture context attached to a `ProviderHttp`.
+#[derive(Clone)]
+struct RateLimitCtx {
+    store: Arc<RateLimitStore>,
+    provider: ProviderId,
+    account_id: String,
+}
 
 /// Shared HTTP helper that all executors can use to send requests and
 /// handle the common response patterns (status check, stream vs complete).
 #[derive(Clone)]
 pub struct ProviderHttp {
     http: Client,
+    rl_ctx: Option<RateLimitCtx>,
 }
 
 impl ProviderHttp {
     /// Creates a new helper wrapping the given HTTP client.
     #[must_use]
     pub fn new(http: Client) -> Self {
-        Self { http }
+        Self { http, rl_ctx: None }
+    }
+
+    /// Attaches rate-limit capture context. Headers from every response
+    /// sent through this helper will be stored in `store`.
+    #[must_use]
+    pub fn with_ratelimit(mut self, store: Arc<RateLimitStore>, provider: ProviderId) -> Self {
+        self.rl_ctx = Some(RateLimitCtx {
+            store,
+            provider,
+            account_id: "active".to_string(),
+        });
+        self
     }
 
     /// Returns a reference to the inner HTTP client for building requests.
@@ -31,10 +54,48 @@ impl ProviderHttp {
         &self.http
     }
 
+    /// Extracts rate-limit-related headers from the response and writes
+    /// them into the store (if a context is configured).
+    fn capture_ratelimit_headers(&self, headers: &rquest::header::HeaderMap) {
+        let Some(ctx) = &self.rl_ctx else { return };
+
+        let mut captured = HashMap::new();
+        for (name, value) in headers {
+            let key = name.as_str();
+            // Capture anthropic-ratelimit-*, x-ratelimit-*, retry-after
+            if (key.starts_with("anthropic-ratelimit-")
+                || key.starts_with("x-ratelimit-")
+                || key == "retry-after")
+                && let Ok(v) = value.to_str()
+            {
+                captured.insert(key.to_string(), v.to_string());
+            }
+        }
+
+        if captured.is_empty() {
+            return;
+        }
+
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+
+        ctx.store.update(
+            ctx.provider.clone(),
+            ctx.account_id.clone(),
+            RateLimitSnapshot {
+                headers: captured,
+                captured_at: now,
+            },
+        );
+    }
+
     /// Sends a request and checks for success status.
     ///
     /// On non-2xx responses, reads the body text and returns
-    /// [`ByokError::Upstream`].
+    /// [`ByokError::Upstream`]. Rate limit headers are captured from
+    /// **both** success and error responses.
     ///
     /// # Errors
     ///
@@ -42,6 +103,8 @@ impl ProviderHttp {
     /// or a transport error if the request fails to send.
     pub async fn send(&self, builder: RequestBuilder) -> Result<rquest::Response> {
         let resp = builder.send().await?;
+        // Capture rate limit headers before consuming the body.
+        self.capture_ratelimit_headers(resp.headers());
         let status = resp.status();
         if status.is_success() {
             Ok(resp)
@@ -91,5 +154,12 @@ mod tests {
     fn test_provider_http_clone() {
         let http = ProviderHttp::new(Client::new());
         let _http2 = http.clone();
+    }
+
+    #[test]
+    fn test_with_ratelimit() {
+        let store = Arc::new(RateLimitStore::new());
+        let http = ProviderHttp::new(Client::new()).with_ratelimit(store, ProviderId::Claude);
+        assert!(http.rl_ctx.is_some());
     }
 }

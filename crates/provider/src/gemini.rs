@@ -6,7 +6,7 @@ use crate::{http_util::ProviderHttp, registry};
 use async_trait::async_trait;
 use byokey_auth::AuthManager;
 use byokey_types::{
-    ChatRequest, ProviderId,
+    ChatRequest, ProviderId, RateLimitStore,
     traits::{ProviderExecutor, ProviderResponse, Result},
 };
 use rquest::Client;
@@ -24,12 +24,17 @@ pub struct GeminiExecutor {
 
 impl GeminiExecutor {
     /// Creates a new Gemini executor with an optional API key and auth manager.
-    pub fn new(http: Client, api_key: Option<String>, auth: Arc<AuthManager>) -> Self {
-        Self {
-            ph: ProviderHttp::new(http),
-            api_key,
-            auth,
+    pub fn new(
+        http: Client,
+        api_key: Option<String>,
+        auth: Arc<AuthManager>,
+        ratelimit: Option<Arc<RateLimitStore>>,
+    ) -> Self {
+        let mut ph = ProviderHttp::new(http);
+        if let Some(store) = ratelimit {
+            ph = ph.with_ratelimit(store, ProviderId::Gemini);
         }
+        Self { ph, api_key, auth }
     }
 
     /// Returns the auth header: `x-goog-api-key` for API keys, `Authorization: Bearer` for OAuth.
@@ -75,7 +80,7 @@ mod tests {
     fn make_executor() -> GeminiExecutor {
         let store = Arc::new(InMemoryTokenStore::new());
         let auth = Arc::new(AuthManager::new(store, rquest::Client::new()));
-        GeminiExecutor::new(Client::new(), None, auth)
+        GeminiExecutor::new(Client::new(), None, auth, None)
     }
 
     #[test]

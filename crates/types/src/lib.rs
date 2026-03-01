@@ -7,12 +7,14 @@
 pub mod chat;
 pub mod error;
 pub mod provider;
+pub mod ratelimit;
 pub mod token;
 pub mod traits;
 
 pub use chat::ChatRequest;
 pub use error::ByokError;
 pub use provider::{ProtocolFormat, ProviderId};
+pub use ratelimit::{RateLimitSnapshot, RateLimitStore};
 pub use token::{AccountInfo, OAuthToken, TokenState};
 pub use traits::{
     ByteStream, ProviderExecutor, ProviderResponse, RequestTranslator, ResponseTranslator,

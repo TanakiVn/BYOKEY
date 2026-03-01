@@ -11,6 +11,21 @@ import struct Foundation.Date
 #endif
 /// A type that performs HTTP operations defined by the OpenAPI document.
 internal protocol APIProtocol: Sendable {
+    /// Lists all accounts for every provider.
+    ///
+    /// - Remark: HTTP `GET /v0/management/accounts`.
+    /// - Remark: Generated from `#/paths//v0/management/accounts/get(accounts_handler)`.
+    func accounts_handler(_ input: Operations.accounts_handler.Input) async throws -> Operations.accounts_handler.Output
+    /// Removes a stored account (and its token) for a provider.
+    ///
+    /// - Remark: HTTP `DELETE /v0/management/accounts/{provider}/{account_id}`.
+    /// - Remark: Generated from `#/paths//v0/management/accounts/{provider}/{account_id}/delete(remove_account_handler)`.
+    func remove_account_handler(_ input: Operations.remove_account_handler.Input) async throws -> Operations.remove_account_handler.Output
+    /// Switches the active account for a provider.
+    ///
+    /// - Remark: HTTP `POST /v0/management/accounts/{provider}/{account_id}/activate`.
+    /// - Remark: Generated from `#/paths//v0/management/accounts/{provider}/{account_id}/activate/post(activate_account_handler)`.
+    func activate_account_handler(_ input: Operations.activate_account_handler.Input) async throws -> Operations.activate_account_handler.Output
     /// Returns the current server and provider status.
     ///
     /// - Remark: HTTP `GET /v0/management/status`.
@@ -20,6 +35,27 @@ internal protocol APIProtocol: Sendable {
 
 /// Convenience overloads for operation inputs.
 extension APIProtocol {
+    /// Lists all accounts for every provider.
+    ///
+    /// - Remark: HTTP `GET /v0/management/accounts`.
+    /// - Remark: Generated from `#/paths//v0/management/accounts/get(accounts_handler)`.
+    internal func accounts_handler(headers: Operations.accounts_handler.Input.Headers = .init()) async throws -> Operations.accounts_handler.Output {
+        try await accounts_handler(Operations.accounts_handler.Input(headers: headers))
+    }
+    /// Removes a stored account (and its token) for a provider.
+    ///
+    /// - Remark: HTTP `DELETE /v0/management/accounts/{provider}/{account_id}`.
+    /// - Remark: Generated from `#/paths//v0/management/accounts/{provider}/{account_id}/delete(remove_account_handler)`.
+    internal func remove_account_handler(path: Operations.remove_account_handler.Input.Path) async throws -> Operations.remove_account_handler.Output {
+        try await remove_account_handler(Operations.remove_account_handler.Input(path: path))
+    }
+    /// Switches the active account for a provider.
+    ///
+    /// - Remark: HTTP `POST /v0/management/accounts/{provider}/{account_id}/activate`.
+    /// - Remark: Generated from `#/paths//v0/management/accounts/{provider}/{account_id}/activate/post(activate_account_handler)`.
+    internal func activate_account_handler(path: Operations.activate_account_handler.Input.Path) async throws -> Operations.activate_account_handler.Output {
+        try await activate_account_handler(Operations.activate_account_handler.Input(path: path))
+    }
     /// Returns the current server and provider status.
     ///
     /// - Remark: HTTP `GET /v0/management/status`.
@@ -36,6 +72,66 @@ internal enum Servers {}
 internal enum Components {
     /// Types generated from the `#/components/schemas` section of the OpenAPI document.
     internal enum Schemas {
+        /// Details for a single stored account.
+        ///
+        /// - Remark: Generated from `#/components/schemas/AccountDetail`.
+        internal struct AccountDetail: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AccountDetail/account_id`.
+            internal var account_id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AccountDetail/expires_at`.
+            internal var expires_at: Swift.Int64?
+            /// - Remark: Generated from `#/components/schemas/AccountDetail/is_active`.
+            internal var is_active: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/AccountDetail/label`.
+            internal var label: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AccountDetail/token_state`.
+            internal var token_state: Components.Schemas.TokenStateDto
+            /// Creates a new `AccountDetail`.
+            ///
+            /// - Parameters:
+            ///   - account_id:
+            ///   - expires_at:
+            ///   - is_active:
+            ///   - label:
+            ///   - token_state:
+            internal init(
+                account_id: Swift.String,
+                expires_at: Swift.Int64? = nil,
+                is_active: Swift.Bool,
+                label: Swift.String? = nil,
+                token_state: Components.Schemas.TokenStateDto
+            ) {
+                self.account_id = account_id
+                self.expires_at = expires_at
+                self.is_active = is_active
+                self.label = label
+                self.token_state = token_state
+            }
+            internal enum CodingKeys: String, CodingKey {
+                case account_id
+                case expires_at
+                case is_active
+                case label
+                case token_state
+            }
+        }
+        /// All accounts grouped by provider.
+        ///
+        /// - Remark: Generated from `#/components/schemas/AccountsResponse`.
+        internal struct AccountsResponse: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AccountsResponse/providers`.
+            internal var providers: [Components.Schemas.ProviderAccounts]
+            /// Creates a new `AccountsResponse`.
+            ///
+            /// - Parameters:
+            ///   - providers:
+            internal init(providers: [Components.Schemas.ProviderAccounts]) {
+                self.providers = providers
+            }
+            internal enum CodingKeys: String, CodingKey {
+                case providers
+            }
+        }
         /// Authentication state for a provider.
         ///
         /// - Remark: Generated from `#/components/schemas/AuthStatus`.
@@ -43,6 +139,37 @@ internal enum Components {
             case valid = "valid"
             case expired = "expired"
             case not_configured = "not_configured"
+        }
+        /// Accounts for a single provider.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ProviderAccounts`.
+        internal struct ProviderAccounts: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProviderAccounts/accounts`.
+            internal var accounts: [Components.Schemas.AccountDetail]
+            /// - Remark: Generated from `#/components/schemas/ProviderAccounts/display_name`.
+            internal var display_name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ProviderAccounts/id`.
+            internal var id: Swift.String
+            /// Creates a new `ProviderAccounts`.
+            ///
+            /// - Parameters:
+            ///   - accounts:
+            ///   - display_name:
+            ///   - id:
+            internal init(
+                accounts: [Components.Schemas.AccountDetail],
+                display_name: Swift.String,
+                id: Swift.String
+            ) {
+                self.accounts = accounts
+                self.display_name = display_name
+                self.id = id
+            }
+            internal enum CodingKeys: String, CodingKey {
+                case accounts
+                case display_name
+                case id
+            }
         }
         /// Per-provider status summary.
         ///
@@ -137,6 +264,14 @@ internal enum Components {
                 case server
             }
         }
+        /// Token validity state.
+        ///
+        /// - Remark: Generated from `#/components/schemas/TokenStateDto`.
+        internal enum TokenStateDto: String, Codable, Hashable, Sendable, CaseIterable {
+            case valid = "valid"
+            case expired = "expired"
+            case invalid = "invalid"
+        }
     }
     /// Types generated from the `#/components/parameters` section of the OpenAPI document.
     internal enum Parameters {}
@@ -150,6 +285,278 @@ internal enum Components {
 
 /// API operations, with input and output types, generated from `#/paths` in the OpenAPI document.
 internal enum Operations {
+    /// Lists all accounts for every provider.
+    ///
+    /// - Remark: HTTP `GET /v0/management/accounts`.
+    /// - Remark: Generated from `#/paths//v0/management/accounts/get(accounts_handler)`.
+    internal enum accounts_handler {
+        internal static let id: Swift.String = "accounts_handler"
+        internal struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v0/management/accounts/GET/header`.
+            internal struct Headers: Sendable, Hashable {
+                internal var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.accounts_handler.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                internal init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.accounts_handler.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            internal var headers: Operations.accounts_handler.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            internal init(headers: Operations.accounts_handler.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        internal enum Output: Sendable, Hashable {
+            internal struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v0/management/accounts/GET/responses/200/content`.
+                internal enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v0/management/accounts/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AccountsResponse)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    internal var json: Components.Schemas.AccountsResponse {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                internal var body: Operations.accounts_handler.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                internal init(body: Operations.accounts_handler.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//v0/management/accounts/get(accounts_handler)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.accounts_handler.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            internal var ok: Operations.accounts_handler.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        internal enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            internal init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            internal var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            internal static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Removes a stored account (and its token) for a provider.
+    ///
+    /// - Remark: HTTP `DELETE /v0/management/accounts/{provider}/{account_id}`.
+    /// - Remark: Generated from `#/paths//v0/management/accounts/{provider}/{account_id}/delete(remove_account_handler)`.
+    internal enum remove_account_handler {
+        internal static let id: Swift.String = "remove_account_handler"
+        internal struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v0/management/accounts/{provider}/{account_id}/DELETE/path`.
+            internal struct Path: Sendable, Hashable {
+                /// Provider identifier
+                ///
+                /// - Remark: Generated from `#/paths/v0/management/accounts/{provider}/{account_id}/DELETE/path/provider`.
+                internal var provider: Swift.String
+                /// Account identifier
+                ///
+                /// - Remark: Generated from `#/paths/v0/management/accounts/{provider}/{account_id}/DELETE/path/account_id`.
+                internal var account_id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - provider: Provider identifier
+                ///   - account_id: Account identifier
+                internal init(
+                    provider: Swift.String,
+                    account_id: Swift.String
+                ) {
+                    self.provider = provider
+                    self.account_id = account_id
+                }
+            }
+            internal var path: Operations.remove_account_handler.Input.Path
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            internal init(path: Operations.remove_account_handler.Input.Path) {
+                self.path = path
+            }
+        }
+        internal enum Output: Sendable, Hashable {
+            internal struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                internal init() {}
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//v0/management/accounts/{provider}/{account_id}/delete(remove_account_handler)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.remove_account_handler.Output.NoContent)
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//v0/management/accounts/{provider}/{account_id}/delete(remove_account_handler)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            internal static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            internal var noContent: Operations.remove_account_handler.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+    }
+    /// Switches the active account for a provider.
+    ///
+    /// - Remark: HTTP `POST /v0/management/accounts/{provider}/{account_id}/activate`.
+    /// - Remark: Generated from `#/paths//v0/management/accounts/{provider}/{account_id}/activate/post(activate_account_handler)`.
+    internal enum activate_account_handler {
+        internal static let id: Swift.String = "activate_account_handler"
+        internal struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v0/management/accounts/{provider}/{account_id}/activate/POST/path`.
+            internal struct Path: Sendable, Hashable {
+                /// Provider identifier
+                ///
+                /// - Remark: Generated from `#/paths/v0/management/accounts/{provider}/{account_id}/activate/POST/path/provider`.
+                internal var provider: Swift.String
+                /// Account identifier
+                ///
+                /// - Remark: Generated from `#/paths/v0/management/accounts/{provider}/{account_id}/activate/POST/path/account_id`.
+                internal var account_id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - provider: Provider identifier
+                ///   - account_id: Account identifier
+                internal init(
+                    provider: Swift.String,
+                    account_id: Swift.String
+                ) {
+                    self.provider = provider
+                    self.account_id = account_id
+                }
+            }
+            internal var path: Operations.activate_account_handler.Input.Path
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            internal init(path: Operations.activate_account_handler.Input.Path) {
+                self.path = path
+            }
+        }
+        internal enum Output: Sendable, Hashable {
+            internal struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                internal init() {}
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//v0/management/accounts/{provider}/{account_id}/activate/post(activate_account_handler)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.activate_account_handler.Output.NoContent)
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//v0/management/accounts/{provider}/{account_id}/activate/post(activate_account_handler)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            internal static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            internal var noContent: Operations.activate_account_handler.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+    }
     /// Returns the current server and provider status.
     ///
     /// - Remark: HTTP `GET /v0/management/status`.

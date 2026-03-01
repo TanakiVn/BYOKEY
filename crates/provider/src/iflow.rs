@@ -8,7 +8,7 @@ use crate::registry;
 use async_trait::async_trait;
 use byokey_auth::AuthManager;
 use byokey_types::{
-    ChatRequest, ProviderId,
+    ChatRequest, ProviderId, RateLimitStore,
     traits::{ProviderExecutor, ProviderResponse, Result},
 };
 use hmac::{Hmac, Mac};
@@ -28,12 +28,17 @@ pub struct IFlowExecutor {
 
 impl IFlowExecutor {
     /// Creates a new iFlow executor with an optional API key and auth manager.
-    pub fn new(http: Client, api_key: Option<String>, auth: Arc<AuthManager>) -> Self {
-        Self {
-            ph: ProviderHttp::new(http),
-            api_key,
-            auth,
+    pub fn new(
+        http: Client,
+        api_key: Option<String>,
+        auth: Arc<AuthManager>,
+        ratelimit: Option<Arc<RateLimitStore>>,
+    ) -> Self {
+        let mut ph = ProviderHttp::new(http);
+        if let Some(store) = ratelimit {
+            ph = ph.with_ratelimit(store, ProviderId::IFlow);
         }
+        Self { ph, api_key, auth }
     }
 
     /// Resolves the API key: config-provided key first, otherwise from the auth store.
@@ -109,7 +114,7 @@ mod tests {
     fn make_executor() -> IFlowExecutor {
         let store = Arc::new(InMemoryTokenStore::new());
         let auth = Arc::new(AuthManager::new(store, rquest::Client::new()));
-        IFlowExecutor::new(Client::new(), None, auth)
+        IFlowExecutor::new(Client::new(), None, auth, None)
     }
 
     #[test]

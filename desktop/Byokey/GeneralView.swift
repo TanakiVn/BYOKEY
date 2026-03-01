@@ -9,77 +9,63 @@ struct GeneralView: View {
     var body: some View {
         Form {
             Section("Daemon") {
-                    LabeledContent("Status") {
-                        HStack(spacing: 6) {
-                            switch daemon.statusSummary {
-                            case .transitioning:
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text("Starting…")
-                                    .foregroundStyle(.secondary)
-                            case .running:
-                                Circle().fill(.green).frame(width: 8, height: 8)
-                                Text("Running")
-                            case .registered:
-                                Circle().fill(.orange).frame(width: 8, height: 8)
-                                Text("Registered")
-                                    .foregroundStyle(.secondary)
-                            case .stopped:
-                                Circle().fill(.red).frame(width: 8, height: 8)
-                                Text("Stopped")
-                                    .foregroundStyle(.secondary)
-                            }
+                LabeledContent("Status") {
+                    HStack(spacing: 6) {
+                        switch daemon.statusSummary {
+                        case .transitioning:
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Starting…")
+                                .foregroundStyle(.secondary)
+                        case .running:
+                            Circle().fill(.green).frame(width: 8, height: 8)
+                            Text("Running")
+                        case .registered:
+                            Circle().fill(.orange).frame(width: 8, height: 8)
+                            Text("Registered")
+                                .foregroundStyle(.secondary)
+                        case .stopped:
+                            Circle().fill(.red).frame(width: 8, height: 8)
+                            Text("Stopped")
+                                .foregroundStyle(.secondary)
                         }
-                    }
-
-                    Toggle("Enabled", isOn: Binding(
-                        get: { daemon.registrationStatus == .enabled },
-                        set: { newValue in
-                            Task {
-                                if newValue {
-                                    await daemon.enable()
-                                } else {
-                                    await daemon.disable()
-                                }
-                            }
-                        }
-                    ))
-                    .disabled(daemon.isTransitioning)
-
-                    if let error = daemon.errorMessage {
-                        Label(error, systemImage: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.red)
-                            .font(.caption)
                     }
                 }
 
+                Toggle("Enabled", isOn: Binding(
+                    get: { daemon.registrationStatus == .enabled },
+                    set: { newValue in
+                        Task {
+                            if newValue {
+                                await daemon.enable()
+                            } else {
+                                await daemon.disable()
+                            }
+                        }
+                    }
+                ))
+                .disabled(daemon.isTransitioning)
+
+                if let error = daemon.errorMessage {
+                    Label(error, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                        .font(.caption)
+                }
+            }
+
+            if daemon.isReachable {
                 Section("Providers") {
-                    if daemon.isReachable {
-                        if providers.isEmpty {
-                            Text("No providers configured")
-                                .foregroundStyle(.secondary)
-                        } else {
-                            ForEach(providers, id: \.id) { provider in
-                                ProviderRow(provider: provider)
-                            }
-                        }
-                    } else if daemon.isTransitioning {
-                        HStack(spacing: 8) {
-                            ProgressView().controlSize(.small)
-                            Text("Connecting to daemon…")
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 8)
+                    if providers.isEmpty {
+                        Text("No providers configured")
+                            .foregroundStyle(.secondary)
                     } else {
-                        ContentUnavailableView(
-                            "Daemon Not Running",
-                            systemImage: "server.rack",
-                            description: Text("Enable the daemon to view provider status.")
-                        )
+                        ForEach(providers, id: \.id) { provider in
+                            ProviderRow(provider: provider)
+                        }
                     }
                 }
-            DaemonLogView()
+                DaemonLogView()
+            }
         }
         .formStyle(.grouped)
         .navigationTitle("General")

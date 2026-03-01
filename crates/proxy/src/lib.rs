@@ -3,6 +3,7 @@
 //! Exposes an OpenAI-compatible `/v1/chat/completions` endpoint, a `/v1/models`
 //! listing, and an Amp CLI compatibility layer under `/amp/*`.
 
+pub mod accounts;
 mod amp;
 mod amp_provider;
 mod chat;
@@ -11,6 +12,7 @@ mod messages;
 mod models;
 #[allow(clippy::needless_for_each)]
 pub mod openapi;
+pub mod ratelimits;
 pub mod status;
 pub mod usage;
 
@@ -22,10 +24,11 @@ use arc_swap::ArcSwap;
 use axum::{
     Json, Router,
     extract::State,
-    routing::{any, get, post},
+    routing::{any, delete, get, post},
 };
 use byokey_auth::AuthManager;
 use byokey_config::Config;
+use byokey_types::RateLimitStore;
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 
@@ -40,6 +43,8 @@ pub struct AppState {
     pub http: rquest::Client,
     /// In-memory usage statistics.
     pub usage: Arc<UsageStats>,
+    /// Per-provider, per-account rate limit snapshots from upstream responses.
+    pub ratelimits: Arc<RateLimitStore>,
 }
 
 impl AppState {
@@ -54,6 +59,7 @@ impl AppState {
             auth,
             http,
             usage: Arc::new(UsageStats::new()),
+            ratelimits: Arc::new(RateLimitStore::new()),
         })
     }
 }
@@ -134,6 +140,19 @@ pub fn make_router(state: Arc<AppState>) -> Router {
         // Management API
         .route("/v0/management/status", get(status::status_handler))
         .route("/v0/management/usage", get(usage_handler))
+        .route("/v0/management/accounts", get(accounts::accounts_handler))
+        .route(
+            "/v0/management/accounts/{provider}/{account_id}",
+            delete(accounts::remove_account_handler),
+        )
+        .route(
+            "/v0/management/accounts/{provider}/{account_id}/activate",
+            post(accounts::activate_account_handler),
+        )
+        .route(
+            "/v0/management/ratelimits",
+            get(ratelimits::ratelimits_handler),
+        )
         .route("/openapi.json", get(openapi::openapi_json))
         .with_state(state)
         .layer(TraceLayer::new_for_http())

@@ -11,7 +11,7 @@ use async_trait::async_trait;
 use byokey_auth::AuthManager;
 use byokey_translate::{GeminiToOpenAI, OpenAIToGemini};
 use byokey_types::{
-    ByokError, ChatRequest, ProviderId, RequestTranslator, ResponseTranslator,
+    ByokError, ChatRequest, ProviderId, RateLimitStore, RequestTranslator, ResponseTranslator,
     traits::{ByteStream, ProviderExecutor, ProviderResponse, Result},
 };
 use bytes::Bytes;
@@ -34,12 +34,17 @@ pub struct AntigravityExecutor {
 
 impl AntigravityExecutor {
     /// Creates a new Antigravity executor with an optional API key and auth manager.
-    pub fn new(http: Client, api_key: Option<String>, auth: Arc<AuthManager>) -> Self {
-        Self {
-            ph: ProviderHttp::new(http),
-            api_key,
-            auth,
+    pub fn new(
+        http: Client,
+        api_key: Option<String>,
+        auth: Arc<AuthManager>,
+        ratelimit: Option<Arc<RateLimitStore>>,
+    ) -> Self {
+        let mut ph = ProviderHttp::new(http);
+        if let Some(store) = ratelimit {
+            ph = ph.with_ratelimit(store, ProviderId::Antigravity);
         }
+        Self { ph, api_key, auth }
     }
 
     /// Returns the bearer token: API key if present, otherwise fetches an OAuth token.
@@ -292,7 +297,7 @@ mod tests {
     fn make_executor() -> AntigravityExecutor {
         let store = Arc::new(InMemoryTokenStore::new());
         let auth = Arc::new(AuthManager::new(store, rquest::Client::new()));
-        AntigravityExecutor::new(Client::new(), None, auth)
+        AntigravityExecutor::new(Client::new(), None, auth, None)
     }
 
     #[test]

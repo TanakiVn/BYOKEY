@@ -78,6 +78,7 @@ async fn chat_completions_inner(
         config_fn,
         state.auth.clone(),
         state.http.clone(),
+        Some(state.ratelimits.clone()),
     )
     .map_err(ApiError::from)?;
 

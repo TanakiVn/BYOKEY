@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use byokey_auth::AuthManager;
 use byokey_translate::{ClaudeToOpenAI, OpenAIToClaude};
 use byokey_types::{
-    ChatRequest, ProviderId,
+    ChatRequest, ProviderId, RateLimitStore,
     traits::{ProviderExecutor, ProviderResponse, RequestTranslator, ResponseTranslator, Result},
 };
 use rquest::Client;
@@ -30,12 +30,17 @@ pub struct KiroExecutor {
 
 impl KiroExecutor {
     /// Creates a new Kiro executor with an optional API key and auth manager.
-    pub fn new(http: Client, api_key: Option<String>, auth: Arc<AuthManager>) -> Self {
-        Self {
-            ph: ProviderHttp::new(http),
-            api_key,
-            auth,
+    pub fn new(
+        http: Client,
+        api_key: Option<String>,
+        auth: Arc<AuthManager>,
+        ratelimit: Option<Arc<RateLimitStore>>,
+    ) -> Self {
+        let mut ph = ProviderHttp::new(http);
+        if let Some(store) = ratelimit {
+            ph = ph.with_ratelimit(store, ProviderId::Kiro);
         }
+        Self { ph, api_key, auth }
     }
 
     /// Returns the bearer token: API key if present, otherwise fetches an OAuth token.
@@ -89,7 +94,7 @@ mod tests {
     fn make_executor() -> KiroExecutor {
         let store = Arc::new(InMemoryTokenStore::new());
         let auth = Arc::new(AuthManager::new(store, rquest::Client::new()));
-        KiroExecutor::new(Client::new(), None, auth)
+        KiroExecutor::new(Client::new(), None, auth, None)
     }
 
     #[test]

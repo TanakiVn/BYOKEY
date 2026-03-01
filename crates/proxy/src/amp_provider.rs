@@ -286,6 +286,7 @@ async fn gemini_native_via_backend(
         backend_config.api_key,
         state.auth.clone(),
         state.http.clone(),
+        Some(state.ratelimits.clone()),
     )
     .ok_or_else(|| {
         ApiError::from(ByokError::UnsupportedModel(format!(
