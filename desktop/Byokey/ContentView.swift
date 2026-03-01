@@ -16,24 +16,20 @@ struct ContentView: View {
 
             HStack(spacing: 12) {
                 Button("Enable") {
-                    do {
-                        try daemon.register()
-                    } catch {
-                        print("Failed to register: \(error)")
-                    }
+                    daemon.register()
                 }
                 .disabled(daemon.status == .enabled)
 
                 Button("Disable") {
-                    Task {
-                        do {
-                            try await daemon.unregister()
-                        } catch {
-                            print("Failed to unregister: \(error)")
-                        }
-                    }
+                    Task { await daemon.unregister() }
                 }
                 .disabled(daemon.status != .enabled)
+            }
+
+            if let error = daemon.errorMessage {
+                Text(error)
+                    .foregroundStyle(.red)
+                    .font(.caption)
             }
         }
         .padding(40)

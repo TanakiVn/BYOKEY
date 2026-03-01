@@ -11,7 +11,6 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>io.byokey.desktop.daemon</string>
         <string>serve</string>
     </array>
 
@@ -20,11 +19,5 @@
 
     <key>KeepAlive</key>
     <true/>
-
-    <key>StandardOutPath</key>
-    <string>/tmp/byokey-daemon.stdout.log</string>
-
-    <key>StandardErrorPath</key>
-    <string>/tmp/byokey-daemon.stderr.log</string>
 </dict>
 </plist>
