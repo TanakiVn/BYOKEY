@@ -9,6 +9,7 @@ final class DaemonManager {
     private(set) var errorMessage: String?
 
     private var monitorTask: Task<Void, Never>?
+    private var unreachableSince: Date?
 
     private var service: SMAppService {
         SMAppService.agent(plistName: AppEnvironment.daemonPlistName)
@@ -37,7 +38,24 @@ final class DaemonManager {
         monitorTask?.cancel()
         monitorTask = Task { [weak self] in
             while !Task.isCancelled {
-                await self?.checkReachability()
+                guard let self else { return }
+                await self.checkReachability()
+                self.refresh()
+
+                // Detect stuck "registered but not reachable" state.
+                if self.registrationStatus == .enabled && !self.isReachable {
+                    if self.unreachableSince == nil {
+                        self.unreachableSince = Date()
+                    } else if let since = self.unreachableSince,
+                              Date().timeIntervalSince(since) > 10,
+                              !self.isTransitioning {
+                        self.errorMessage = "Daemon registered but not responding on port \(AppEnvironment.defaultPort). Check Console.app for launch errors."
+                    }
+                } else {
+                    self.unreachableSince = nil
+                    if self.isReachable { self.errorMessage = nil }
+                }
+
                 try? await Task.sleep(for: .seconds(3))
             }
         }

@@ -64,6 +64,9 @@ struct GeneralView: View {
                         }
                     }
                 }
+            }
+
+            if daemon.isReachable || daemon.statusSummary == .registered {
                 DaemonLogView()
             }
         }
