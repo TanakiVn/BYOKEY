@@ -11,9 +11,6 @@ pub const DEVICE_CODE_URL: &str = "https://github.com/login/device/code";
 /// GitHub OAuth token endpoint.
 pub const TOKEN_URL: &str = "https://github.com/login/oauth/access_token";
 
-/// Public OAuth client ID for GitHub Copilot.
-pub const CLIENT_ID: &str = "Iv1.b507a08c87ecfe98";
-
 /// OAuth scopes requested during authorization.
 pub const SCOPES: &[&str] = &["read:user"];
 

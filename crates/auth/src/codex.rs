@@ -5,9 +5,6 @@
 
 use byokey_types::{ByokError, OAuthToken, traits::Result};
 
-/// OAuth 2.0 client ID for Codex CLI.
-pub const CLIENT_ID: &str = "app_EMoamEEZ73f0CkXaXp7hrann";
-
 /// Local callback port for the OAuth redirect.
 pub const CALLBACK_PORT: u16 = 1455;
 
@@ -25,22 +22,23 @@ const REDIRECT_URI: &str = "http://localhost:1455/auth/callback";
 
 /// Build the authorization URL with PKCE parameters.
 #[must_use]
-pub fn build_auth_url(code_challenge: &str, state: &str) -> String {
+pub fn build_auth_url(client_id: &str, code_challenge: &str, state: &str) -> String {
     let scope = SCOPES.join("+");
     format!(
-        "{AUTH_URL}?client_id={CLIENT_ID}&code_challenge={code_challenge}&code_challenge_method=S256&codex_cli_simplified_flow=true&id_token_add_organizations=true&prompt=login&redirect_uri={REDIRECT_URI_ENCODED}&response_type=code&scope={scope}&state={state}",
+        "{AUTH_URL}?client_id={client_id}&code_challenge={code_challenge}&code_challenge_method=S256&codex_cli_simplified_flow=true&id_token_add_organizations=true&prompt=login&redirect_uri={REDIRECT_URI_ENCODED}&response_type=code&scope={scope}&state={state}",
     )
 }
 
 /// Build the form-urlencoded parameters for the token exchange request.
 #[must_use]
 pub fn token_form_params<'a>(
+    client_id: &'a str,
     code: &'a str,
     code_verifier: &'a str,
 ) -> [(&'static str, &'a str); 5] {
     [
         ("grant_type", "authorization_code"),
-        ("client_id", CLIENT_ID),
+        ("client_id", client_id),
         ("code", code),
         ("redirect_uri", REDIRECT_URI),
         ("code_verifier", code_verifier),
@@ -77,10 +75,12 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    const TEST_CLIENT_ID: &str = "test-codex-client-id";
+
     #[test]
     fn test_auth_url_contains_client_id() {
-        let url = build_auth_url("mychallenge", "mystate");
-        assert!(url.contains(CLIENT_ID));
+        let url = build_auth_url(TEST_CLIENT_ID, "mychallenge", "mystate");
+        assert!(url.contains(TEST_CLIENT_ID));
         assert!(url.contains("mychallenge"));
         assert!(url.contains("mystate"));
         assert!(url.contains(&CALLBACK_PORT.to_string()));

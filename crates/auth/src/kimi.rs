@@ -4,7 +4,6 @@
 use byokey_types::{ByokError, OAuthToken, traits::Result};
 use rand::RngCore as _;
 
-pub const CLIENT_ID: &str = "17e5f671-d194-4dfb-9706-5516cb48c098";
 pub const DEVICE_CODE_URL: &str = "https://auth.kimi.com/api/oauth/device_authorization";
 pub const TOKEN_URL: &str = "https://auth.kimi.com/api/oauth/token";
 pub const SCOPES: &[&str] = &["openid", "offline_access"];
@@ -66,17 +65,17 @@ pub fn x_msh_headers() -> Vec<(&'static str, String)> {
 }
 
 #[must_use]
-pub fn build_device_code_params(scope: &str) -> Vec<(String, String)> {
+pub fn build_device_code_params(client_id: &str, scope: &str) -> Vec<(String, String)> {
     vec![
-        ("client_id".into(), CLIENT_ID.into()),
+        ("client_id".into(), client_id.into()),
         ("scope".into(), scope.into()),
     ]
 }
 
 #[must_use]
-pub fn build_token_poll_params(device_code: &str) -> Vec<(String, String)> {
+pub fn build_token_poll_params(client_id: &str, device_code: &str) -> Vec<(String, String)> {
     vec![
-        ("client_id".into(), CLIENT_ID.into()),
+        ("client_id".into(), client_id.into()),
         ("device_code".into(), device_code.into()),
         (
             "grant_type".into(),
@@ -197,13 +196,15 @@ mod tests {
         assert_eq!(headers[4].1.len(), 36);
     }
 
+    const TEST_CLIENT_ID: &str = "test-kimi-client-id";
+
     #[test]
     fn test_build_device_code_params() {
-        let params = build_device_code_params("openid offline_access");
+        let params = build_device_code_params(TEST_CLIENT_ID, "openid offline_access");
         assert!(
             params
                 .iter()
-                .any(|(k, v)| k == "client_id" && v == CLIENT_ID)
+                .any(|(k, v)| k == "client_id" && v == TEST_CLIENT_ID)
         );
         assert!(
             params
@@ -214,11 +215,11 @@ mod tests {
 
     #[test]
     fn test_build_token_poll_params() {
-        let params = build_token_poll_params("kimi-dc-abc");
+        let params = build_token_poll_params(TEST_CLIENT_ID, "kimi-dc-abc");
         assert!(
             params
                 .iter()
-                .any(|(k, v)| k == "client_id" && v == CLIENT_ID)
+                .any(|(k, v)| k == "client_id" && v == TEST_CLIENT_ID)
         );
         assert!(
             params

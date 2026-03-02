@@ -5,9 +5,6 @@
 
 use byokey_types::{ByokError, OAuthToken, traits::Result};
 
-/// OAuth 2.0 client ID for Claude.
-pub const CLIENT_ID: &str = "9d1c250a-e61b-44d9-88ed-5944d1962f5e";
-
 /// Local callback port for the OAuth redirect.
 pub const CALLBACK_PORT: u16 = 54545;
 
@@ -33,18 +30,23 @@ pub fn generate_pkce() -> (String, String) {
 
 /// Build the authorization URL with PKCE parameters.
 #[must_use]
-pub fn build_auth_url(code_challenge: &str, state: &str) -> String {
+pub fn build_auth_url(client_id: &str, code_challenge: &str, state: &str) -> String {
     format!(
-        "{AUTH_URL}?client_id={CLIENT_ID}&code=true&code_challenge={code_challenge}&code_challenge_method=S256&redirect_uri={REDIRECT_URI_ENCODED}&response_type=code&scope={SCOPE_ENCODED}&state={state}",
+        "{AUTH_URL}?client_id={client_id}&code=true&code_challenge={code_challenge}&code_challenge_method=S256&redirect_uri={REDIRECT_URI_ENCODED}&response_type=code&scope={SCOPE_ENCODED}&state={state}",
     )
 }
 
 /// Build the JSON body for exchanging an authorization code for an access token.
 #[must_use]
-pub fn build_token_request(code: &str, code_verifier: &str, state: &str) -> serde_json::Value {
+pub fn build_token_request(
+    client_id: &str,
+    code: &str,
+    code_verifier: &str,
+    state: &str,
+) -> serde_json::Value {
     serde_json::json!({
         "grant_type": "authorization_code",
-        "client_id": CLIENT_ID,
+        "client_id": client_id,
         "code": code,
         "redirect_uri": REDIRECT_URI,
         "code_verifier": code_verifier,
@@ -82,10 +84,12 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    const TEST_CLIENT_ID: &str = "test-claude-client-id";
+
     #[test]
     fn test_build_auth_url_contains_client_id() {
-        let url = build_auth_url("challenge123", "state456");
-        assert!(url.contains(CLIENT_ID));
+        let url = build_auth_url(TEST_CLIENT_ID, "challenge123", "state456");
+        assert!(url.contains(TEST_CLIENT_ID));
         assert!(url.contains("challenge123"));
         assert!(url.contains("state456"));
         assert!(url.contains("S256"));
@@ -93,15 +97,15 @@ mod tests {
 
     #[test]
     fn test_build_auth_url_contains_port() {
-        let url = build_auth_url("ch", "st");
+        let url = build_auth_url(TEST_CLIENT_ID, "ch", "st");
         assert!(url.contains(&CALLBACK_PORT.to_string()));
     }
 
     #[test]
     fn test_build_token_request_fields() {
-        let req = build_token_request("mycode", "myverifier", "mystate");
+        let req = build_token_request(TEST_CLIENT_ID, "mycode", "myverifier", "mystate");
         assert_eq!(req["grant_type"], "authorization_code");
-        assert_eq!(req["client_id"], CLIENT_ID);
+        assert_eq!(req["client_id"], TEST_CLIENT_ID);
         assert_eq!(req["code"], "mycode");
         assert_eq!(req["code_verifier"], "myverifier");
         assert_eq!(req["state"], "mystate");

@@ -4,7 +4,6 @@
 //! Slow-down multiplier: 1.5x.
 use byokey_types::{ByokError, OAuthToken, traits::Result};
 
-pub const CLIENT_ID: &str = "f0304373b74a44d2b584a3fb70ca9e56";
 pub const DEVICE_CODE_URL: &str = "https://chat.qwen.ai/api/v1/oauth2/device/code";
 pub const TOKEN_URL: &str = "https://chat.qwen.ai/api/v1/oauth2/token";
 pub const SCOPES: &[&str] = &["openid", "profile", "email", "model.completion"];
@@ -20,9 +19,13 @@ pub struct DeviceCodeResponse {
 }
 
 #[must_use]
-pub fn build_device_code_params(code_challenge: &str, scope: &str) -> Vec<(String, String)> {
+pub fn build_device_code_params(
+    client_id: &str,
+    code_challenge: &str,
+    scope: &str,
+) -> Vec<(String, String)> {
     vec![
-        ("client_id".into(), CLIENT_ID.into()),
+        ("client_id".into(), client_id.into()),
         ("scope".into(), scope.into()),
         ("code_challenge".into(), code_challenge.into()),
         ("code_challenge_method".into(), "S256".into()),
@@ -30,9 +33,13 @@ pub fn build_device_code_params(code_challenge: &str, scope: &str) -> Vec<(Strin
 }
 
 #[must_use]
-pub fn build_token_poll_params(device_code: &str, code_verifier: &str) -> Vec<(String, String)> {
+pub fn build_token_poll_params(
+    client_id: &str,
+    device_code: &str,
+    code_verifier: &str,
+) -> Vec<(String, String)> {
     vec![
-        ("client_id".into(), CLIENT_ID.into()),
+        ("client_id".into(), client_id.into()),
         ("device_code".into(), device_code.into()),
         (
             "grant_type".into(),
@@ -160,13 +167,15 @@ mod tests {
         assert!(parse_device_code_response(&resp).is_err());
     }
 
+    const TEST_CLIENT_ID: &str = "test-qwen-client-id";
+
     #[test]
     fn test_build_device_code_params() {
-        let params = build_device_code_params("challenge123", "openid profile");
+        let params = build_device_code_params(TEST_CLIENT_ID, "challenge123", "openid profile");
         assert!(
             params
                 .iter()
-                .any(|(k, v)| k == "client_id" && v == CLIENT_ID)
+                .any(|(k, v)| k == "client_id" && v == TEST_CLIENT_ID)
         );
         assert!(
             params
@@ -187,11 +196,11 @@ mod tests {
 
     #[test]
     fn test_build_token_poll_params() {
-        let params = build_token_poll_params("dc-abc", "verifier-xyz");
+        let params = build_token_poll_params(TEST_CLIENT_ID, "dc-abc", "verifier-xyz");
         assert!(
             params
                 .iter()
-                .any(|(k, v)| k == "client_id" && v == CLIENT_ID)
+                .any(|(k, v)| k == "client_id" && v == TEST_CLIENT_ID)
         );
         assert!(
             params

@@ -41,9 +41,10 @@ async fn login_claude(
     http: &rquest::Client,
     account: Option<&str>,
 ) -> Result<()> {
+    let creds = credentials::fetch("claude", http).await?;
     let (verifier, challenge) = pkce::generate_pkce();
     let state = pkce::random_state();
-    let auth_url = claude::build_auth_url(&challenge, &state);
+    let auth_url = claude::build_auth_url(&creds.client_id, &challenge, &state);
 
     let listener = callback::bind_callback(claude::CALLBACK_PORT).await?;
     open_browser(&auth_url);
@@ -61,7 +62,7 @@ async fn login_claude(
         .get("code")
         .ok_or_else(|| ByokError::Auth("missing code parameter in callback".into()))?;
 
-    let body = claude::build_token_request(code, &verifier, &state);
+    let body = claude::build_token_request(&creds.client_id, code, &verifier, &state);
     let resp = http
         .post(claude::TOKEN_URL)
         .header("Content-Type", "application/json")
@@ -87,9 +88,10 @@ async fn login_codex(
     http: &rquest::Client,
     account: Option<&str>,
 ) -> Result<()> {
+    let creds = credentials::fetch("codex", http).await?;
     let (verifier, challenge) = pkce::generate_pkce();
     let state = pkce::random_state();
-    let auth_url = codex::build_auth_url(&challenge, &state);
+    let auth_url = codex::build_auth_url(&creds.client_id, &challenge, &state);
 
     open_browser(&auth_url);
 
@@ -106,7 +108,7 @@ async fn login_codex(
         .get("code")
         .ok_or_else(|| ByokError::Auth("missing code parameter in callback".into()))?;
 
-    let token_params = codex::token_form_params(code, &verifier);
+    let token_params = codex::token_form_params(&creds.client_id, code, &verifier);
     let resp = http
         .post(codex::TOKEN_URL)
         .header("Accept", "application/json")
@@ -132,9 +134,10 @@ async fn login_copilot(
     http: &rquest::Client,
     account: Option<&str>,
 ) -> Result<()> {
+    let creds = credentials::fetch("copilot", http).await?;
     let scope_str = copilot::SCOPES.join(" ");
     let init_params = [
-        ("client_id", copilot::CLIENT_ID),
+        ("client_id", creds.client_id.as_str()),
         ("scope", scope_str.as_str()),
     ];
 
@@ -167,7 +170,7 @@ async fn login_copilot(
         }
 
         let token_params = [
-            ("client_id", copilot::CLIENT_ID),
+            ("client_id", creds.client_id.as_str()),
             ("device_code", device_code.as_str()),
             ("grant_type", "urn:ietf:params:oauth:grant-type:device_code"),
         ];
@@ -311,9 +314,10 @@ async fn login_qwen(
     http: &rquest::Client,
     account: Option<&str>,
 ) -> Result<()> {
+    let creds = credentials::fetch("qwen", http).await?;
     let (verifier, challenge) = pkce::generate_pkce();
     let scope_str = qwen::SCOPES.join(" ");
-    let device_params = qwen::build_device_code_params(&challenge, &scope_str);
+    let device_params = qwen::build_device_code_params(&creds.client_id, &challenge, &scope_str);
 
     let resp = http
         .post(qwen::DEVICE_CODE_URL)
@@ -344,7 +348,7 @@ async fn login_qwen(
             return Err(ByokError::Auth("device code expired".into()));
         }
 
-        let token_params = qwen::build_token_poll_params(&device_code, &verifier);
+        let token_params = qwen::build_token_poll_params(&creds.client_id, &device_code, &verifier);
         let resp = http
             .post(qwen::TOKEN_URL)
             .header("Accept", "application/json")
@@ -381,8 +385,9 @@ async fn login_kimi(
     http: &rquest::Client,
     account: Option<&str>,
 ) -> Result<()> {
+    let creds = credentials::fetch("kimi", http).await?;
     let scope_str = kimi::SCOPES.join(" ");
-    let device_params = kimi::build_device_code_params(&scope_str);
+    let device_params = kimi::build_device_code_params(&creds.client_id, &scope_str);
     let msh_headers = kimi::x_msh_headers();
 
     let mut req = http
@@ -417,7 +422,7 @@ async fn login_kimi(
             return Err(ByokError::Auth("device code expired".into()));
         }
 
-        let token_params = kimi::build_token_poll_params(&device_code);
+        let token_params = kimi::build_token_poll_params(&creds.client_id, &device_code);
         let mut req = http
             .post(kimi::TOKEN_URL)
             .header("Accept", "application/json")
