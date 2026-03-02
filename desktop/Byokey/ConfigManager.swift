@@ -9,7 +9,7 @@ import Foundation
 final class ConfigManager {
     // MARK: - Server
 
-    var port: Int = 8018 { didSet { scheduleSave() } }
+    var port: Int = AppEnvironment.defaultPort { didSet { scheduleSave() } }
     var host: String = "127.0.0.1" { didSet { scheduleSave() } }
 
     // MARK: - Network
@@ -52,7 +52,7 @@ final class ConfigManager {
         else { return }
 
         rawConfig = json
-        port = (json["port"] as? NSNumber)?.intValue ?? 8018
+        port = (json["port"] as? NSNumber)?.intValue ?? AppEnvironment.defaultPort
         host = json["host"] as? String ?? "127.0.0.1"
         proxyUrl = json["proxy_url"] as? String ?? ""
 

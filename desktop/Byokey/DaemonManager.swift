@@ -11,7 +11,7 @@ final class DaemonManager {
     private var monitorTask: Task<Void, Never>?
 
     private var service: SMAppService {
-        SMAppService.agent(plistName: "io.byokey.desktop.daemon.plist")
+        SMAppService.agent(plistName: AppEnvironment.daemonPlistName)
     }
 
     var statusSummary: StatusSummary {
@@ -99,7 +99,7 @@ final class DaemonManager {
 
     @discardableResult
     func checkReachability() async -> Bool {
-        let url = URL(string: "http://127.0.0.1:8018/v0/management/status")!
+        let url = AppEnvironment.baseURL.appendingPathComponent("v0/management/status")
         var request = URLRequest(url: url, timeoutInterval: 2)
         request.httpMethod = "GET"
         do {

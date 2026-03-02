@@ -3,7 +3,7 @@ import Foundation
 enum CLIRunner {
     static var binaryURL: URL {
         Bundle.main.bundleURL
-            .appending(path: "Contents/Helpers/io.byokey.desktop.daemon")
+            .appending(path: AppEnvironment.daemonBinaryPath)
     }
 
     static func login(provider: String, account: String? = nil) async throws {

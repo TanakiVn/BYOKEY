@@ -14,7 +14,7 @@ final class DaemonLogStream {
             "stream",
             "--predicate",
             """
-            process == "io.byokey.desktop.daemon" \
+            process == "\(AppEnvironment.daemonName)" \
             OR (sender == "launchd" AND eventMessage CONTAINS[cd] "byokey")
             """,
             "--style", "compact",

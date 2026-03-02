@@ -9,7 +9,7 @@ struct AccountsView: View {
     @State private var errorMessage: String?
 
     private let client = Client(
-        serverURL: URL(string: "http://127.0.0.1:8018")!,
+        serverURL: AppEnvironment.baseURL,
         transport: URLSessionTransport()
     )
 
